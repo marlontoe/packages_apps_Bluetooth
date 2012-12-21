@@ -108,6 +108,9 @@ final class HeadsetStateMachine extends StateMachine {
         BluetoothUuid.Handsfree,
     };
 
+    private static final String ACTION_VOICE_COMMAND_STOP =
+            "com.android.internal.intent.action.VOICE_COMMAND_STOP";
+
     private Disconnected mDisconnected;
     private Pending mPending;
     private Connected mConnected;
@@ -125,6 +128,7 @@ final class HeadsetStateMachine extends StateMachine {
     private AtPhonebook mPhonebook;
 
     private static Intent sVoiceCommandIntent;
+    private static Intent sVoiceCommandStopIntent;
 
     private HeadsetPhoneState mPhoneState;
     private int mAudioState;
@@ -195,6 +199,9 @@ final class HeadsetStateMachine extends StateMachine {
         if (sVoiceCommandIntent == null) {
             sVoiceCommandIntent = new Intent(Intent.ACTION_VOICE_COMMAND);
             sVoiceCommandIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
+        if (sVoiceCommandStopIntent == null) {
+            sVoiceCommandStopIntent = new Intent(ACTION_VOICE_COMMAND_STOP);
         }
 
         addState(mDisconnected);
@@ -1129,6 +1136,7 @@ final class HeadsetStateMachine extends StateMachine {
                 atResponseCodeNative(HeadsetHalConstants.AT_RESPONSE_OK, 0);
                 mVoiceRecognitionStarted = false;
                 mWaitingForVoiceRecognition = false;
+                mService.sendBroadcast(sVoiceCommandStopIntent);
                 if (!isInCall()) {
                     disconnectAudioNative(getByteAddress(mCurrentDevice));
                     mAudioManager.setParameters("A2dpSuspended=false");
