@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2013 The Linux Foundation. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +67,8 @@ import java.util.Map.Entry;
 import java.util.List;
 import android.content.pm.PackageManager;
 import android.os.ServiceManager;
+import android.os.PowerManager;
+import android.content.Context;
 
 public class AdapterService extends Service {
     private static final String TAG = "BluetoothAdapterService";
@@ -89,7 +92,7 @@ public class AdapterService extends Service {
     static {
         classInitNative();
     }
-
+    private PowerManager mPowerManager;
     private static AdapterService sAdapterService;
     public static synchronized AdapterService getAdapterService(){
         if (sAdapterService != null && !sAdapterService.mCleaningUp) {
@@ -253,6 +256,7 @@ public class AdapterService extends Service {
         mAdapterProperties = new AdapterProperties(this);
         mAdapterStateMachine =  AdapterState.make(this, mAdapterProperties);
         mJniCallbacks =  new JniCallbacks(mAdapterStateMachine, mAdapterProperties);
+        mPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         initNative();
         mNativeAvailable=true;
         mCallbacks = new RemoteCallbackList<IBluetoothCallback>();
@@ -284,7 +288,7 @@ public class AdapterService extends Service {
         for (int i=0; i < supportedProfileServices.length;i++) {
             mProfileServicesState.put(supportedProfileServices[i].getName(),BluetoothAdapter.STATE_OFF);
         }
-        mRemoteDevices = new RemoteDevices(this);
+        mRemoteDevices = new RemoteDevices(mPowerManager, this);
         mAdapterProperties.init(mRemoteDevices);
 
         if (DBG) {debugLog("processStart(): Make Bond State Machine");}
@@ -742,6 +746,17 @@ public class AdapterService extends Service {
             return service.getRemoteName(device);
         }
 
+        public int getRemoteType(BluetoothDevice device) {
+            if (!Utils.checkCaller()) {
+                Log.w(TAG,"getRemoteType(): not allowed for non-active user");
+                return BluetoothDevice.DEVICE_TYPE_UNKNOWN;
+            }
+
+            AdapterService service = getService();
+            if (service == null) return BluetoothDevice.DEVICE_TYPE_UNKNOWN;
+            return service.getRemoteType(device);
+        }
+
         public String getRemoteAlias(BluetoothDevice device) {
             if (!Utils.checkCaller()) {
                 Log.w(TAG,"getRemoteAlias(): not allowed for non-active user");
@@ -889,7 +904,7 @@ public class AdapterService extends Service {
             return  BluetoothAdapter.STATE_OFF;
         }
         else {
-            debugLog("getState(): mAdapterProperties: " + mAdapterProperties);
+            if (DBG) debugLog("getState(): mAdapterProperties: " + mAdapterProperties);
             return mAdapterProperties.getState();
         }
     }
@@ -1105,6 +1120,8 @@ public class AdapterService extends Service {
         if ((hsService == null) ||(a2dpService == null )){
             return;
         }
+        boolean hsConnected = false;
+        boolean a2dpConnected =  false;
         List<BluetoothDevice> a2dpConnDevList= a2dpService.getConnectedDevices();
         List<BluetoothDevice> hfConnDevList= hsService.getConnectedDevices();
         // Check if the device is in disconnected state and if so return
@@ -1116,11 +1133,30 @@ public class AdapterService extends Service {
             (PROFILE_CONN_CONNECTED  == firstProfileStatus)){
             return;
         }
-        if((hfConnDevList.isEmpty()) &&
+        if(!a2dpConnDevList.isEmpty()) {
+            for (BluetoothDevice a2dpDevice : a2dpConnDevList)
+            {
+                if(a2dpDevice.equals(device))
+                {
+                    a2dpConnected = true;
+                }
+            }
+        }
+        if(!hfConnDevList.isEmpty()) {
+            for (BluetoothDevice hsDevice : hfConnDevList)
+            {
+                if(hsDevice.equals(device))
+                {
+                    hsConnected = true;
+                }
+            }
+        }
+
+        if((hfConnDevList.isEmpty()) && a2dpConnected &&
             (hsService.getPriority(device) >= BluetoothProfile.PRIORITY_ON)){
             hsService.connect(device);
         }
-        else if((a2dpConnDevList.isEmpty()) &&
+        else if((a2dpConnDevList.isEmpty()) && hsConnected &&
             (a2dpService.getPriority(device) >= BluetoothProfile.PRIORITY_ON)){
             a2dpService.connect(device);
         }
@@ -1197,6 +1233,13 @@ public class AdapterService extends Service {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp == null) return null;
         return deviceProp.getName();
+    }
+
+     int getRemoteType(BluetoothDevice device) {
+        enforceCallingOrSelfPermission(BLUETOOTH_PERM, "Need BLUETOOTH permission");
+        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
+        if (deviceProp == null) return BluetoothDevice.DEVICE_TYPE_UNKNOWN;
+        return deviceProp.getDeviceType();
     }
 
      String getRemoteAlias(BluetoothDevice device) {
