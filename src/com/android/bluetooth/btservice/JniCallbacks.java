@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2013 The Linux Foundation. All rights reserved
- * Not a Contribution.
  * Copyright (C) 2012 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -83,8 +81,4 @@ final class JniCallbacks {
         mAdapterProperties.adapterPropertyChangedCallback(types, val);
     }
 
-    void deviceMasInstancesFoundCallback(int status, byte[] address, String[] name, int[] scn,
-            int[] id, int[] msgtype) {
-        mRemoteDevices.deviceMasInstancesFoundCallback(status, address, name, scn, id, msgtype);
-    }
 }
