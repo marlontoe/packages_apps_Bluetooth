@@ -397,7 +397,7 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
             ContentValues updateValues;
             ContentResolverUpdateThread uiUpdateThread = null;
             HeaderSet reply;
-            int position = 0;
+            long position = 0;
             reply = new HeaderSet();
             HeaderSet request;
             request = new HeaderSet();
@@ -600,7 +600,7 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
             } finally {
                 try {
                     // Close InputStream and remove SendFileInfo from map
-                    BluetoothOppUtility.closeSendFileInfo(mInfo.mUri);
+                    BluetoothOppUtility.closeSendFileInfo(mInfo.mUri, fileInfo);
 
                     if (uiUpdateThread != null) {
                         uiUpdateThread.interrupt ();

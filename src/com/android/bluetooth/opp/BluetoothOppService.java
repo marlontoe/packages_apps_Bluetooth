@@ -401,7 +401,8 @@ public class BluetoothOppService extends Service {
     private void updateFromProvider() {
         synchronized (BluetoothOppService.this) {
             mPendingUpdate = true;
-            if (mUpdateThread == null) {
+            if ((mUpdateThread == null) && (mAdapter != null)
+                && mAdapter.isEnabled()) {
                 mUpdateThread = new UpdateThread();
                 mUpdateThread.start();
             }
@@ -550,6 +551,8 @@ public class BluetoothOppService extends Service {
                 mNotifier.updateNotification();
 
                 cursor.close();
+                if (V) Log.v(TAG, "Freeing cursor: " + cursor);
+                cursor = null;
             }
         }
 
@@ -624,7 +627,7 @@ public class BluetoothOppService extends Service {
                 if (sendFileInfo == null || sendFileInfo.mInputStream == null) {
                     Log.e(TAG, "Can't open file for OUTBOUND info " + info.mId);
                     Constants.updateShareStatus(this, info.mId, BluetoothShare.STATUS_BAD_REQUEST);
-                    BluetoothOppUtility.closeSendFileInfo(info.mUri);
+                    BluetoothOppUtility.closeSendFileInfo(info.mUri, sendFileInfo);
                     return;
                 }
             }
@@ -796,6 +799,11 @@ public class BluetoothOppService extends Service {
                 if (V) Log.v(TAG, "Service cancel batch for share " + info.mId);
                 batch.cancelBatch();
             }
+            if (mTransfer != null) {
+                if (V) Log.v(TAG, "Stop transfer session");
+                mTransfer.stop();
+                mTransfer = null;
+            }
             if (batch.isEmpty()) {
                 if (V) Log.v(TAG, "Service remove batch  " + batch.mId);
                 removeBatch(batch);
@@ -952,6 +960,8 @@ public class BluetoothOppService extends Service {
                 if (V) Log.v(TAG, "Delete aborted inbound share, number = " + delNum);
             }
             cursorToFile.close();
+            if (V) Log.v(TAG, "Freeing cursor: " + cursorToFile);
+            cursorToFile = null;
         }
 
         // on boot : remove unconfirmed inbound shares.
@@ -988,6 +998,8 @@ public class BluetoothOppService extends Service {
             }
         }
         cursor.close();
+        if (V) Log.v(TAG, "Freeing cursor: " + cursor);
+        cursor = null;
     }
 
     private static class MediaScannerNotifier implements MediaScannerConnectionClient {

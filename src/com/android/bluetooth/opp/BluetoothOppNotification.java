@@ -111,9 +111,9 @@ class BluetoothOppNotification {
 
         int direction; // to indicate sending or receiving
 
-        int totalCurrent = 0; // current transfer bytes
+        long totalCurrent = 0; // current transfer bytes
 
-        int totalTotal = 0; // total bytes for current transfer
+        long totalTotal = 0; // total bytes for current transfer
 
         long timeStamp = 0; // Database time stamp. Used for sorting ongoing transfers.
 
@@ -161,6 +161,11 @@ class BluetoothOppNotification {
             mUpdateCompleteNotification = true;
             updateCompletedNotification();
             updateIncomingFileConfirmNotification();
+<<<<<<< HEAD
+=======
+            mPendingUpdate = 0;
+            mHandler.removeMessages(NOTIFY);
+>>>>>>> cm
         }
     }
 
@@ -251,8 +256,8 @@ class BluetoothOppNotification {
             long timeStamp = cursor.getLong(timestampIndex);
             int dir = cursor.getInt(directionIndex);
             int id = cursor.getInt(idIndex);
-            int total = cursor.getInt(totalBytesIndex);
-            int current = cursor.getInt(currentBytesIndex);
+            long total = cursor.getLong(totalBytesIndex);
+            long current = cursor.getLong(currentBytesIndex);
             int confirmation = cursor.getInt(confirmIndex);
 
             String destination = cursor.getString(destinationIndex);
@@ -295,6 +300,8 @@ class BluetoothOppNotification {
             }
         }
         cursor.close();
+        if (V) Log.v(TAG, "Freeing cursor: " + cursor);
+        cursor = null;
 
         // Add the notifications
         for (NotificationItem item : mNotifications.values()) {
@@ -327,7 +334,15 @@ class BluetoothOppNotification {
             b.setContentTitle(item.description);
             b.setContentInfo(
                 BluetoothOppUtility.formatProgressText(mContext, item.totalTotal, item.totalCurrent));
-            b.setProgress(item.totalTotal, item.totalCurrent, item.totalTotal == -1);
+            if (item.totalTotal != 0) {
+                if (V) Log.v(TAG, "mCurrentBytes: " + item.totalCurrent +
+                    " mTotalBytes: " + item.totalTotal + " (" +
+                    (int)((item.totalCurrent * 100) / item.totalTotal) + " %)");
+                b.setProgress(100, (int)((item.totalCurrent * 100) / item.totalTotal),
+                    item.totalTotal == -1);
+            } else {
+                b.setProgress(100, 100, item.totalTotal == -1);
+            }
             b.setWhen(item.timeStamp);
             if (item.direction == BluetoothShare.DIRECTION_OUTBOUND) {
                 b.setSmallIcon(android.R.drawable.stat_sys_upload);
@@ -402,6 +417,8 @@ class BluetoothOppNotification {
         }
         if (V) Log.v(TAG, "outbound: succ-" + outboundSuccNumber + "  fail-" + outboundFailNumber);
         cursor.close();
+        if (V) Log.v(TAG, "Freeing cursor: " + cursor);
+        cursor = null;
 
         outboundNum = outboundSuccNumber + outboundFailNumber;
         // create the outbound notification
@@ -449,6 +466,8 @@ class BluetoothOppNotification {
         }
         if (V) Log.v(TAG, "inbound: succ-" + inboundSuccNumber + "  fail-" + inboundFailNumber);
         cursor.close();
+        if (V) Log.v(TAG, "Freeing cursor: " + cursor);
+        cursor = null;
 
         inboundNum = inboundSuccNumber + inboundFailNumber;
         // create the inbound notification
@@ -515,5 +534,7 @@ class BluetoothOppNotification {
             mNotificationMgr.notify(id, n);
         }
         cursor.close();
+        if (V) Log.v(TAG, "Freeing cursor: " + cursor);
+        cursor = null;
     }
 }

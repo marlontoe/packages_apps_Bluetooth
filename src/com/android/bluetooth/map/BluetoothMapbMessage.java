@@ -33,8 +33,9 @@ import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 public abstract class BluetoothMapbMessage {
 
     protected static String TAG = "BluetoothMapbMessage";
-    protected static final boolean D = false;
-    protected static final boolean V = false;
+    protected static final boolean D = BluetoothMapService.DEBUG;
+    protected static final boolean V = BluetoothMapService.VERBOSE;
+
     private static final String VERSION = "VERSION:1.0";
 
     public static int INVALID_VALUE = -1;
@@ -152,6 +153,12 @@ public abstract class BluetoothMapbMessage {
             } else
                 throw new IllegalArgumentException("No Phone number");
         }
+        public String[] getEmailAddresses() {
+            if(emailAddresses.length > 0) {
+                return emailAddresses;
+            } else
+                throw new IllegalArgumentException("No Recipient Email Address");
+        }
 
         public int getEnvLevel() {
             return envLevel;
@@ -244,6 +251,36 @@ public abstract class BluetoothMapbMessage {
             this.mInStream = is;
         }
 
+        private byte[] getLineTerminatorAsBytes() {
+            int readByte;
+
+            /* Donot skip Empty Line.
+             */
+
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            try {
+                while ((readByte = mInStream.read()) != -1) {
+                    if (readByte == '\r') {
+                        if ((readByte = mInStream.read()) != -1 && readByte == '\n') {
+                            if(output.size() == 0){
+                               Log.v(TAG,"outputsize 0");
+                               output.write('\r');
+                               output.write('\n');
+                            }
+                            break;
+                        } else {
+                            output.write('\r');
+                        }
+                    }
+                    output.write(readByte);
+                }
+            } catch (IOException e) {
+                Log.w(TAG, e);
+                return null;
+            }
+            return output.toByteArray();
+        }
+
         private byte[] getLineAsBytes() {
             int readByte;
 
@@ -280,6 +317,22 @@ public abstract class BluetoothMapbMessage {
             return output.toByteArray();
         }
 
+        /**
+         * Read a line of text from the BMessage including empty lines.
+         * @return the next line of text, or null at end of file, or if UTF-8 is not supported.
+         */
+        public String getLineTerminator() {
+            try {
+                byte[] line = getLineTerminatorAsBytes();
+                if (line.length == 0)
+                    return null;
+                else
+                    return new String(line, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                Log.w(TAG, e);
+                return null;
+            }
+        }
         /**
          * Read a line of text from the BMessage.
          * @return the next line of text, or null at end of file, or if UTF-8 is not supported.
@@ -364,6 +417,20 @@ public abstract class BluetoothMapbMessage {
                 return null;
             }
             return data;
+        }
+
+        public String getStringTerminator(String terminator) {
+           StringBuilder dataStr= new StringBuilder();
+           String lineCur = getLineTerminator();
+           while( lineCur != null && (!lineCur.equals(terminator)))
+           {
+               dataStr.append(lineCur);
+               if(! lineCur.equals("\r\n")) {
+                  dataStr.append("\r\n");
+               }
+               lineCur = getLineTerminator();
+           }
+           return dataStr.toString();
         }
     };
 
@@ -548,8 +615,13 @@ public abstract class BluetoothMapbMessage {
         }
         if(line.contains("BEGIN:BBODY")){
             if(D) Log.d(TAG,"Decoding bbody");
-            parseBody(reader);
-        }
+
+            if(type == TYPE.EMAIL){
+               //TODO: Support Attachments also.
+               parseBodyEmail(reader.getStringTerminator("END:BBODY"));
+            } else
+               parseBody(reader);
+            }
     }
 
     private void parseBody(BMsgReader reader) {
@@ -662,6 +734,8 @@ public abstract class BluetoothMapbMessage {
      */
     public abstract void parseMsgInit();
 
+    public void parseBodyEmail (String msg){
+    }
     public abstract byte[] encode() throws UnsupportedEncodingException;
 
     public void setStatus(boolean read) {
