@@ -291,6 +291,12 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
             try {
                 mCs = new ClientSession(mTransport1);
                 mConnected = true;
+
+                oppmanager = BluetoothOppManager.getInstance(mContext1);
+                if ((oppmanager != null) && oppmanager.isA2DPPlaying) {
+                    mCs.reduceMTU(true);
+                    if (V) Log.v(TAG, "Reducing Obex MTU to 8k as A2DP or SCO in progress");
+                }
             } catch (IOException e1) {
                 Log.e(TAG, "OBEX session create error");
             }
