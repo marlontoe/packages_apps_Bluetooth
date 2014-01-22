@@ -1250,7 +1250,7 @@ public class BluetoothMapContent {
 
         if ((ap.getFilterPeriodEnd() != -1)) {
             if (fi.msgType == FilterInfo.TYPE_SMS) {
-            where += " AND date < " + ap.getFilterPeriodEnd();
+            where += " AND date <= " + ap.getFilterPeriodEnd();
             } else if (fi.msgType == FilterInfo.TYPE_MMS) {
                 where += " AND date <= " + (ap.getFilterPeriodEnd() / 1000L);
             } else {

@@ -151,7 +151,6 @@ public class BluetoothOppManager {
 
         // Restore data from preference
         restoreApplicationData();
-
         isA2DPPlaying = false;
         return true;
     }

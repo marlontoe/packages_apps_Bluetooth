@@ -54,6 +54,7 @@ public class BluetoothMapMessageListing {
             Log.d(TAG, "returning  " + list.size());
             return list.size();
         }
+        Log.e(TAG, "list is null returning 0");
         return 0;
     }
 
@@ -75,6 +76,7 @@ public class BluetoothMapMessageListing {
      *             if UTF-8 encoding is unsupported on the platform.
      */
     public byte[] encode() throws UnsupportedEncodingException {
+        Log.d(TAG, "encoding to UTF-8 format");
         StringWriter sw = new StringWriter();
         XmlSerializer xmlMsgElement = Xml.newSerializer();
         try {
