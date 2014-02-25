@@ -31,6 +31,7 @@ import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 class AdapterProperties {
     private static final boolean DBG = true;
@@ -44,7 +45,7 @@ class AdapterProperties {
     private int mScanMode;
     private int mDiscoverableTimeout;
     private ParcelUuid[] mUuids;
-    private ArrayList<BluetoothDevice> mBondedDevices = new ArrayList<BluetoothDevice>();
+    private CopyOnWriteArrayList<BluetoothDevice> mBondedDevices = new CopyOnWriteArrayList<BluetoothDevice>();
 
     private int mProfilesConnecting, mProfilesConnected, mProfilesDisconnecting;
     private HashMap<Integer, Pair<Integer, Integer>> mProfileConnectionState;
@@ -256,6 +257,12 @@ class AdapterProperties {
                     debugLog("Removing bonded device:" +  device);
                 else
                     debugLog("Failed to remove device: " + device);
+            } else if (state == BluetoothDevice.BOND_BONDING) {
+                // Setting remote trust to false on BONDING state if it's already in BONDED list
+                if (mBondedDevices.contains(device)) {
+                    boolean result = mService.setRemoteTrust(device, false);
+                    debugLog("onBondStateChanged result=" + result);
+                }
             }
         }
         catch(Exception ee) {

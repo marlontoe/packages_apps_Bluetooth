@@ -271,7 +271,15 @@ final class HandsfreeClientStateMachine extends StateMachine {
         if (state == c.getState()) {
             return;
         }
-
+        //abandon focus here
+        if (state == BluetoothHandsfreeClientCall.CALL_STATE_TERMINATED) {
+            if (mAudioManager.getMode() != AudioManager.MODE_NORMAL) {
+                mAudioManager.setMode(AudioManager.MODE_NORMAL);
+                Log.d(TAG, "abandonAudioFocus ");
+                // abandon audio focus after the mode has been set back to normal
+                mAudioManager.abandonAudioFocusForCall();
+            }
+        }
         c.setState(state);
         sendCallChangedIntent(c);
     }
@@ -2095,7 +2103,15 @@ final class HandsfreeClientStateMachine extends StateMachine {
                      */
                     if (disconnectAudioNative(getByteAddress(mCurrentDevice))) {
                         mAudioState = BluetoothHandsfreeClient.STATE_AUDIO_DISCONNECTED;
-//                        mAudioManager.setBluetoothScoOn(false);
+                        //abandon audio focus
+                        if (mAudioManager.getMode() != AudioManager.MODE_NORMAL) {
+                                mAudioManager.setMode(AudioManager.MODE_NORMAL);
+                                Log.d(TAG, "abandonAudioFocus");
+                                // abandon audio focus after the mode has been set back to normal
+                                mAudioManager.abandonAudioFocusForCall();
+                        }
+                        Log.d(TAG,"hfp_enable=false");
+                        mAudioManager.setParameters("hfp_enable=false");
                         broadcastAudioState(mCurrentDevice,
                                 BluetoothHandsfreeClient.STATE_AUDIO_DISCONNECTED,
                                 BluetoothHandsfreeClient.STATE_AUDIO_CONNECTED);
@@ -2160,7 +2176,15 @@ final class HandsfreeClientStateMachine extends StateMachine {
                 case HandsfreeClientHalConstants.AUDIO_STATE_DISCONNECTED:
                     if (mAudioState != BluetoothHandsfreeClient.STATE_AUDIO_DISCONNECTED) {
                         mAudioState = BluetoothHandsfreeClient.STATE_AUDIO_DISCONNECTED;
-//                        mAudioManager.setBluetoothScoOn(false);
+                        //abandon audio focus for call
+                        if (mAudioManager.getMode() != AudioManager.MODE_NORMAL) {
+                              mAudioManager.setMode(AudioManager.MODE_NORMAL);
+                              Log.d(TAG, "abandonAudioFocus");
+                                // abandon audio focus after the mode has been set back to normal
+                                mAudioManager.abandonAudioFocusForCall();
+                        }
+                        Log.d(TAG,"hfp_enable=false");
+                        mAudioManager.setParameters("hfp_enable=false");
                         broadcastAudioState(device,
                                 BluetoothHandsfreeClient.STATE_AUDIO_DISCONNECTED,
                                 BluetoothHandsfreeClient.STATE_AUDIO_CONNECTED);

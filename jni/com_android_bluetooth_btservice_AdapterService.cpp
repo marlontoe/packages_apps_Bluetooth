@@ -18,6 +18,7 @@
 
 #define LOG_TAG "BluetoothServiceJni"
 #include "com_android_bluetooth.h"
+#include "android_hardware_wipower.h"
 #include "hardware/bt_sock.h"
 #include "hardware/bt_mce.h"
 #include "utils/Log.h"
@@ -472,8 +473,14 @@ bt_callbacks_t sBluetoothCallbacks = {
     acl_state_changed_callback,
     callback_thread_event,
     dut_mode_recv_callback,
-
-    le_test_mode_recv_callback
+    NULL,
+    le_test_mode_recv_callback,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 static void remote_mas_instances_callback(bt_status_t status, bt_bdaddr_t *bd_addr,
@@ -604,6 +611,7 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
     } else {
         ALOGE("No Bluetooth Library found");
     }
+    ALOGI("%s: succeeds", __FUNCTION__);
 }
 
 static bool initNative(JNIEnv* env, jobject obj) {
@@ -1192,6 +1200,11 @@ jint JNI_OnLoad(JavaVM *jvm, void *reserved)
         return JNI_ERR;
     }
 
+    if ((status = android::register_com_android_bluetooth_hidd(e)) < 0) {
+        ALOGE("jni hidd registration failure: %d", status);
+        return JNI_ERR;
+    }
+
     if ((status = android::register_com_android_bluetooth_hdp(e)) < 0) {
         ALOGE("jni hdp registration failure: %d", status);
         return JNI_ERR;
@@ -1206,5 +1219,16 @@ jint JNI_OnLoad(JavaVM *jvm, void *reserved)
         ALOGE("jni gatt registration failure: %d", status);
         return JNI_ERR;
     }
+
+    if ((status = android::register_com_android_bluetooth_btservice_QAdapterService(e)) < 0) {
+        ALOGE("jni Q adapter service failure: %d", status);
+        return JNI_ERR;
+    }
+
+    if ((status = android::register_android_hardware_wipower(e)) < 0) {
+        ALOGE("jni wipower service registration failure, status: %d", status);
+        return JNI_ERR;
+    }
+
     return JNI_VERSION_1_6;
 }

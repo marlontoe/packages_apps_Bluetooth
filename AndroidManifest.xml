@@ -88,6 +88,13 @@
         </service>
         <service
             android:process="@string/process"
+            android:name = ".btservice.QAdapterService">
+            <intent-filter>
+                <action android:name="android.bluetooth.IQBluetooth" />
+            </intent-filter>
+        </service>
+        <service
+            android:process="@string/process"
             android:name=".opp.BluetoothOppService"
             android:permission="android.permission.ACCESS_BLUETOOTH_SHARE"
             android:enabled="@bool/profile_supported_opp"/>
@@ -207,7 +214,7 @@
                   android:process="@string/process"
                   android:label=""
                   android:excludeFromRecents="true"
-                  android:configChanges="orientation|keyboardHidden"
+                  android:configChanges="orientation|keyboardHidden|screenSize"
                   android:enabled="@bool/profile_supported_opp">
         </activity>
         <activity android:name=".pbap.BluetoothPbapActivity"
@@ -301,6 +308,27 @@
             android:enabled="@bool/profile_supported_hfpclient">
             <intent-filter>
                 <action android:name="android.bluetooth.IBluetoothHandsfreeClient" />
+            </intent-filter>
+        </service>
+        <service
+            android:process="@string/process"
+            android:name = ".hid.HidDevService"
+            android:enabled="@bool/profile_supported_hidd">
+            <intent-filter>
+                <action android:name="android.bluetooth.IBluetoothHidDevice" />
+            </intent-filter>
+        </service>
+        <receiver
+            android:exported="true"
+            android:name=".wipower.BTEventHandler">
+            <intent-filter>
+                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+        <service
+           android:name = ".wipower.WipowerService">
+            <intent-filter>
+                <action android:name="android.wipower.IWipower" />
             </intent-filter>
         </service>
     </application>
