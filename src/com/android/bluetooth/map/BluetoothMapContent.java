@@ -265,7 +265,7 @@ public class BluetoothMapContent {
             selection,
             null, null);
 
-        if (c.moveToFirst()) {
+        if (c !=null && c.moveToFirst()) {
             do {
                 String add = c.getString(c.getColumnIndex("address"));
                 Integer type = c.getInt(c.getColumnIndex("type"));
@@ -314,7 +314,7 @@ public class BluetoothMapContent {
             null, null);
 
         if (D) Log.d(TAG, "   parts:");
-        if (c.moveToFirst()) {
+        if (c !=null && c.moveToFirst()) {
             do {
                 Long partid = c.getLong(c.getColumnIndex(BaseColumns._ID));
                 String ct = c.getString(c.getColumnIndex("ct"));
@@ -358,9 +358,9 @@ public class BluetoothMapContent {
                 printMmsAddr(id);
                 printMmsParts(id);
             }
+            c.close();
         } else {
             Log.d(TAG, "query failed");
-            c.close();
         }
     }
 
@@ -375,9 +375,9 @@ public class BluetoothMapContent {
             while (c.moveToNext()) {
                 printSms(c);
             }
+            c.close();
         } else {
             Log.d(TAG, "query failed");
-            c.close();
         }
 
     }
@@ -722,7 +722,7 @@ public class BluetoothMapContent {
             } else {
                 int toIndex = c.getColumnIndex(MessageColumns.TO_LIST);
                 address = c.getString(toIndex);
-                if (address.contains("")) {
+                if (address != null && address.contains("")) {
                     String[] recepientAddrStr = address.split("");
                     if (recepientAddrStr !=null && recepientAddrStr.length > 0) {
                         if (V){
@@ -732,7 +732,7 @@ public class BluetoothMapContent {
                         e.setRecipientAddressing(recepientAddrStr[0].trim());                    }
                 } else {
                     if (D) Log.d(TAG, "setRecipientAddressing: " + address);
-                    e.setRecipientAddressing(address.trim());
+                    e.setRecipientAddressing(address);
                 }
                 return;
             }
@@ -1043,7 +1043,9 @@ public class BluetoothMapContent {
             name = c.getString(c.getColumnIndex(Contacts.DISPLAY_NAME));
         }
 
-        c.close();
+        if (c != null) {
+           c.close();
+        }
         return name;
     }
 
@@ -1458,9 +1460,13 @@ public class BluetoothMapContent {
             if (!c.isLast()) {
                 where += " OR ";
             }
-            p.close();
+            if (p != null) {
+               p.close();
+            }
         }
-        c.close();
+        if (c != null) {
+           c.close();
+        }
 
         if (str != null && str.length() > 0) {
             if (where.length() > 0) {
@@ -1786,7 +1792,7 @@ public class BluetoothMapContent {
                             message.addTo(multiRecepients.trim(), multiRecepients.trim());
                       }
                 } else if(recipientName.contains(",")){
-                      multiRecepients = recipientName.replace(',', ';');
+                      multiRecepients = recipientName.replace(", \"", "; \"");
                       if(multiRecepients != null){
                          if (V){
                              Log.v(TAG, "Setting ::Recepient name :: " + multiRecepients.trim());
@@ -1804,7 +1810,56 @@ public class BluetoothMapContent {
                       message.addTo(null, recipientName.trim());
                  }
              }
-         }
+
+            recipientName = null;
+            multiRecepients = null;
+            if((recipientName = c.getString(c.getColumnIndex(MessageColumns.CC_LIST))) != null){
+                if(V) Log.v(TAG, " recipientName " + recipientName);
+                if(recipientName.contains("^B")){
+                   String[] recepientStr = recipientName.split("^B");
+                   if(recepientStr !=null && recepientStr.length > 0){
+                      if (V){
+                          Log.v(TAG, " recepientStr[1] " + recepientStr[1].trim());
+                          Log.v(TAG, " recepientStr[0] " + recepientStr[0].trim());
+                      }
+                } else if(recipientName.contains("")){
+                      multiRecepients = recipientName.replace('', ';');
+                      setVCardFromEmailAddress(message, recepientStr[1].trim(), false);
+                      message.addCc(recepientStr[1].trim(), recepientStr[0].trim());
+                   }
+                      if(multiRecepients != null){
+                         if (V){
+                             Log.v(TAG, " Setting ::Recepient name :: " + multiRecepients.trim());
+                         }
+                         emailId = new StringTokenizer(multiRecepients.trim(),";");
+                         do {
+                            setVCardFromEmailAddress(message, emailId.nextElement().toString(), false);
+                         } while(emailId.hasMoreElements());
+
+                            message.addCc(multiRecepients.trim(), multiRecepients.trim());
+                      }
+                } else if(recipientName.contains(",")){
+                      multiRecepients = recipientName.replace(", \"", "; \"");
+if(V) Log.v(TAG, " After replacing  " + multiRecepients);
+
+                      if(multiRecepients != null){
+                         if (V){
+                             Log.v(TAG, "Setting ::Recepient name :: " + multiRecepients.trim());
+                         }
+                         emailId = new StringTokenizer(multiRecepients.trim(),";");
+                         do {
+                            tempEmail = emailId.nextElement().toString();
+                            setVCardFromEmailAddress(message, tempEmail, false);
+                            message.addCc(null, tempEmail);
+                         } while(emailId.hasMoreElements());
+                      }
+                } else {
+                      Log.v(TAG, " Setting ::Recepient name :: " + recipientName.trim());
+                      setVCardFromEmailAddress(message, recipientName.trim(), false);
+                      message.addCc(null, recipientName.trim());
+                 }
+             }
+        }
     }
 
     /**
@@ -2305,7 +2360,8 @@ public class BluetoothMapContent {
             contactId = p.getString(p.getColumnIndex(Contacts._ID));
             contactName = p.getString(p.getColumnIndex(Contacts.DISPLAY_NAME));
         }
-        p.close();
+        if (p != null)
+           p.close();
 
         // The phone number we got is the one we will use
         phoneNumbers = new String[1];
@@ -2404,7 +2460,7 @@ public class BluetoothMapContent {
             selection,
             null, null);
         /* TODO: Change the setVCard...() to return the vCard, and use the name in message.addXxx() */
-        if (c.moveToFirst()) {
+        if (c != null && c.moveToFirst()) {
             do {
                 String address = c.getString(c.getColumnIndex("address"));
                 Integer type = c.getInt(c.getColumnIndex("type"));
@@ -2485,7 +2541,7 @@ public class BluetoothMapContent {
             selection,
             null, null);
 
-        if (c.moveToFirst()) {
+        if (c != null && c.moveToFirst()) {
             do {
                 Long partId = c.getLong(c.getColumnIndex(BaseColumns._ID));
                 String contentType = c.getString(c.getColumnIndex("ct"));
