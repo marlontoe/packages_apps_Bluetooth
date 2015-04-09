@@ -33,6 +33,13 @@ LOCAL_MULTILIB := 32
 
 #LOCAL_CFLAGS += -O0 -g
 
+ifeq ($(strip $(BOARD_HAVE_FMRADIO_BCM)),true)
+LOCAL_CFLAGS += \
+	-DBOARD_HAVE_FMRADIO_BCM
+LOCAL_SRC_FILES += \
+	com_broadcom_fm.cpp
+endif
+
 LOCAL_MODULE := libbluetooth_jni
 LOCAL_MODULE_TAGS := optional
 
