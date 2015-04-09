@@ -204,18 +204,22 @@ public class A2dpSinkService extends ProfileService {
             return service.getConnectionState(device);
         }
 
+        public boolean isA2dpPlaying(BluetoothDevice device) {
+            return false;
+        }
+
+        public boolean setPriority(BluetoothDevice device, int priority) {
+            return false;
+        }
+
+        public int getPriority(BluetoothDevice device) {
+            return BluetoothProfile.PRIORITY_UNDEFINED;
+        }
+
         public BluetoothAudioConfig getAudioConfig(BluetoothDevice device) {
             A2dpSinkService service = getService();
             if (service == null) return null;
             return service.getAudioConfig(device);
         }
     };
-
-    @Override
-    public void dump(StringBuilder sb) {
-        super.dump(sb);
-        if (mStateMachine != null) {
-            mStateMachine.dump(sb);
-        }
-    }
 }

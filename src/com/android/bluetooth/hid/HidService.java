@@ -392,6 +392,14 @@ public class HidService extends ProfileService {
             if (service == null) return false;
             return service.sendData(device, report);
         }
+
+        public boolean setIdleTime(BluetoothDevice device, byte idleTime) {
+            return false;
+        }
+
+        public boolean getIdleTime(BluetoothDevice device) {
+            return false;
+        }
     };
 
     //APIs
@@ -677,16 +685,6 @@ public class HidService extends ProfileService {
             default:
                 Log.e(TAG, "bad hid connection state: " + halState);
                 return BluetoothProfile.STATE_DISCONNECTED;
-        }
-    }
-
-    @Override
-    public void dump(StringBuilder sb) {
-        super.dump(sb);
-        println(sb, "mTargetDevice: " + mTargetDevice);
-        println(sb, "mInputDevices:");
-        for (BluetoothDevice device : mInputDevices.keySet()) {
-            println(sb, "  " + device + " : " + mInputDevices.get(device));
         }
     }
 

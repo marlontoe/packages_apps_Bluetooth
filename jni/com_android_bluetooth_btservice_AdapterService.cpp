@@ -57,6 +57,13 @@ static jobject sJniAdapterServiceObj;
 static jobject sJniCallbacksObj;
 static jfieldID sJniCallbacksField;
 
+#ifdef BOARD_HAVE_FMRADIO_BCM
+static const fm_interface_t *sFmInterface = NULL;
+
+const fm_interface_t* getFmInterface() {
+    return sFmInterface;
+}
+#endif
 
 const bt_interface_t* getBluetoothInterface() {
     return sBluetoothInterface;
@@ -731,6 +738,15 @@ static void classInitNative(JNIEnv* env, jclass clazz) {
         } else {
            ALOGE("Error while opening Bluetooth library");
         }
+#ifdef BOARD_HAVE_FMRADIO_BCM
+        err = module->methods->open(module, FMRADIO_HARDWARE_MODULE_ID, &abstraction);
+        if (err == 0) {
+            fmradio_module_t* fmStack = (fmradio_module_t *)abstraction;
+            sFmInterface = fmStack->get_fmradio_interface();
+        } else {
+           ALOGE("Error while opening FM Radio library");
+        }
+#endif
     } else {
         ALOGE("No Bluetooth Library found");
     }
@@ -1323,5 +1339,12 @@ jint JNI_OnLoad(JavaVM *jvm, void *reserved)
         ALOGE("jni gatt registration failure: %d", status);
         return JNI_ERR;
     }
+
+#ifdef BOARD_HAVE_FMRADIO_BCM
+    if ((status = android::register_com_broadcom_fm(e)) < 0) {
+        ALOGE("jni fm registration failure: %d", status);
+        return JNI_ERR;
+    }
+#endif
     return JNI_VERSION_1_6;
 }

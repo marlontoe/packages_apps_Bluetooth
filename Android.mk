@@ -29,6 +29,14 @@ LOCAL_MULTILIB := 32
 
 LOCAL_PROGUARD_ENABLED := disabled
 
+ifeq ($(strip $(BOARD_HAVE_FMRADIO_BCM)),true)
+LOCAL_SRC_FILES += \
+	$(call all-java-files-under, fmradio)
+LOCAL_JAVA_LIBRARIES += \
+	com.stericsson.hardware.fm
+LOCAL_FULL_MANIFEST_FILE := $(LOCAL_PATH)/fmradio/AndroidManifest.xml
+endif
+
 include $(BUILD_PACKAGE)
 
 include $(call all-makefiles-under,$(LOCAL_PATH))
